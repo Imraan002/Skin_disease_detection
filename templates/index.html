@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLOv5 Detection</title>
+
+    <!-- Add this to the head section of your HTML -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            /* Set your background color */
+        }
+
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .content-container {
+            position: relative;
+            z-index: 1;
+            color: #fff;
+            text-align: center;
+            padding-top: 100px;
+            /* Adjust the padding as needed */
+        }
+
+        h1 {
+            font-size: 2.5em;
+            /* Decreased the font size */
+            color: #3498db;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            /* Added a subtle text shadow */
+            margin-bottom: 20px;
+            animation: glow 2s infinite alternate;
+            /* Added a glow animation */
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .loading-spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            }
+
+            to {
+                text-shadow: 0 0 10px #3498db, 0 0 20px #3498db, 0 0 30px #3498db;
+            }
+        }
+
+
+        .image-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .image-section {
+            width: 48%;
+            margin-bottom: 20px;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        h3 {
+            color: #3498db;
+            margin-top: 20px;
+        }
+
+        pre {
+            background-color: rgba(52, 152, 219, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            color: #fff;
+        }
+
+        .error {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="particles-js"></div>
+
+    <div class="content-container">
+        <h1>CLEAR VIEW</h1>
+
+        <form method="POST" enctype="multipart/form-data" onsubmit="showSpinner()">
+            {{ form.csrf_token }}
+            <label for="file">Choose an image file:</label>
+            {{ form.file }}
+            <button type="submit">Run Detection</button>
+        </form>
+
+        <div class="loading-spinner" id="loadingSpinner" style="display: none;"></div>
+
+        <div class="image-container">
+            {% if image %}
+            <div class="image-section">
+                <h3>Input Image:</h3>
+                <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="Input Image">
+            </div>
+            {% endif %}
+
+            {% if output_image_path %}
+            <div class="image-section">
+                <h3>Output Image:</h3>
+                <img src="{{ url_for('output_image', output_image_path=output_image_path) }}" alt="Output Image">
+            </div>
+            {% endif %}
+        </div>
+
+        <br>
+        <button id="runDetectionBtn">Start Webcam</button> <button id="Btn">Stop Webcam</button>
+
+
+        {% if results %}
+        <h2>Results:</h2>
+        <pre>{{ results }}</pre>
+        {% endif %}
+
+        {% if error %}
+        <h2>Error:</h2>
+        <p class="error">{{ error }}</p>
+        {% endif %}
+    </div>
+
+    <script>
+        function showSpinner() {
+            // Show the loading spinner when the form is submitted
+            document.getElementById('loadingSpinner').style.display = 'block';
+        }
+    </script>
+
+
+
+    <script>
+        document.getElementById('runDetectionBtn').addEventListener('click', () => {
+            // Send a request to the Flask server to trigger the YOLOv5 detection
+            fetch('/start-yolo-detection-webcam', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error:', error));
+        });
+
+
+    </script>
+
+    {% if process %}
+    <script>
+        document.getElementById('Btn').addEventListener('click', () => {
+            fetch('/stop-yolo-detection-webcam', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error:', error));
+        });
+    </script>
+    {% endif %}
+
+
+    <script>
+        // Initialize particles.js with your configuration
+        particlesJS('particles-js', {
+            particles: {
+                number: {
+                    value: 80,
+                    density: {
+                        enable: true,
+                        value_area: 800
+                    }
+                },
+                color: {
+                    value: '#ffffff'
+                },
+                shape: {
+                    type: 'circle',
+                    stroke: {
+                        width: 0,
+                        color: '#000000'
+                    },
+                    polygon: {
+                        nb_sides: 5
+                    },
+                    image: {
+                        src: 'img/github.svg',
+                        width: 100,
+                        height: 100
+                    }
+                },
+                opacity: {
+                    value: 0.7, /* Increase opacity for a brighter effect */
+                    random: false,
+                    anim: {
+                        enable: false,
+                        speed: 1,
+                        opacity_min: 0.1,
+                        sync: false
+                    }
+                },
+                size: {
+                    value: 3,
+                    random: true,
+                    anim: {
+                        enable: false,
+                        speed: 40,
+                        size_min: 0.1,
+                        sync: false
+                    }
+                },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: '#ffffff',
+                    opacity: 0.4,
+                    width: 1
+                },
+                move: {
+                    enable: true,
+                    speed: 6,
+                    direction: 'none',
+                    random: false,
+                    straight: false,
+                    out_mode: 'out',
+                    bounce: false,
+                    attract: {
+                        enable: false,
+                        rotateX: 600,
+                        rotateY: 1200
+                    }
+                }
+            },
+            interactivity: {
+                detect_on: 'canvas',
+                events: {
+                    onhover: {
+                        enable: true,
+                        mode: 'repulse'
+                    },
+                    onclick: {
+                        enable: true,
+                        mode: 'push'
+                    },
+                    resize: true
+                },
+                modes: {
+                    grab: {
+                        distance: 400,
+                        line_linked: {
+                            opacity: 1
+                        }
+                    },
+                    bubble: {
+                        distance: 400,
+                        size: 40,
+                        duration: 2,
+                        opacity: 8,
+                        speed: 3
+                    },
+                    repulse: {
+                        distance: 200,
+                        duration: 0.4
+                    },
+                    push: {
+                        particles_nb: 4
+                    },
+                    remove: {
+                        particles_nb: 2
+                    }
+                }
+            },
+            retina_detect: true
+        });
+    </script>
+</body>
+
+</html>
